@@ -15,3 +15,17 @@ class UserResponse(BaseModel):
 
     # Allows Pydantic to read directly from SQLAlchemy ORM instances
     model_config = ConfigDict(from_attributes=True)
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserUpdate(BaseModel):
+    name: str | None = Field(None, min_length=2, max_length=100)
+
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str = Field(..., min_length=8, max_length=64)
+
+class MessageResponse(BaseModel):
+    message: str
