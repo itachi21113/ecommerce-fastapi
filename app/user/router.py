@@ -10,6 +10,7 @@ from app.user.schema import (
     UserLogin,
     UserResponse,
     UserUpdate,
+    TokenResponse,
 )
 from app.user.service import UserService
 
@@ -36,7 +37,7 @@ def register_user(
 
 @router.post(
     "/login",
-    response_model=UserResponse,
+    response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     summary="Verify user credentials and login",
 )

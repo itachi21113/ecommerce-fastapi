@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 
-from app.core.security import hash_password, verify_password
+from app.core.security import hash_password, verify_password , create_access_token
 from app.user.model import User
 from app.user.repository import UserRepository
 from app.user.schema import PasswordChange, UserCreate, UserLogin, UserUpdate
@@ -27,7 +27,7 @@ class UserService:
         )
         return self.repo.create(new_user)
 
-    def login_user(self, payload: UserLogin) -> User:
+    def login_user(self, payload: UserLogin) -> str:
         user = self.repo.get_by_email(email=payload.email)
         if not user:
             raise HTTPException(
@@ -42,7 +42,7 @@ class UserService:
                 detail="Invalid email or password.",
             )
 
-        return user
+        return create_access_token(user.id)
 
     def get_user_by_id(self, user_id: int) -> User:
         user = self.repo.get_by_id(user_id)
