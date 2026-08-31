@@ -1,11 +1,17 @@
-from pydantic import BaseModel, Field , ConfigDict, EmailStr
+from pydantic import BaseModel, Field , ConfigDict, EmailStr , field_validator
 from enum import Enum
 from datetime import datetime
+from app.core.security import validate_password as validate_password_policy
 
 class UserCreate(BaseModel):
     name: str
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8, max_length=64)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, password: str) -> str:
+        return validate_password_policy(password)
 
 class UserResponse(BaseModel):
     id: int  # or uuid.UUID if using UUIDs

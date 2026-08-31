@@ -14,3 +14,17 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Check if the provided plain text matches the stored hash."""
     return password_hash.verify(plain_password, hashed_password)
+
+COMMON_PASSWORDS = {
+    "password",
+    "password123",
+    "12345678",
+    "qwerty123",
+}
+
+
+def validate_password(password: str) -> str:
+    if password.lower() in COMMON_PASSWORDS:
+        raise ValueError("Password is too common.")
+
+    return password
