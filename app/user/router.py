@@ -44,8 +44,13 @@ def register_user(
 def login_user(
     payload: UserLogin,
     service: UserService = Depends(get_user_service),
-) -> UserResponse:
-    return service.login_user(payload)
+) -> TokenResponse:
+    access_token = service.login_user(payload)
+
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+    )
 
 
 @router.get(
