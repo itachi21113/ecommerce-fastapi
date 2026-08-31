@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.user.model import User
+from app.core.dependencies import get_current_user
 from app.db.database import get_db
 from app.user.repository import UserRepository
 from app.user.schema import (
@@ -62,8 +64,9 @@ def login_user(
 def get_user(
     user_id: int,
     service: UserService = Depends(get_user_service),
+    current_user: User = Depends(get_current_user),
 ) -> UserResponse:
-    return service.get_user_by_id(user_id)
+    return service.get_user_by_id(user_id, current_user)
 
 
 @router.patch(
@@ -75,9 +78,10 @@ def get_user(
 def update_user(
     user_id: int,
     payload: UserUpdate,
+    current_user: User = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
 ) -> UserResponse:
-    return service.update_user(user_id, payload)
+    return service.update_user(user_id, payload, current_user)
 
 
 @router.post(
@@ -89,6 +93,7 @@ def update_user(
 def change_password(
     user_id: int,
     payload: PasswordChange,
+    current_user: User = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
 ) -> dict[str, str]:
-    return service.change_password(user_id, payload)
+    return service.change_password(user_id, payload ,current_user)

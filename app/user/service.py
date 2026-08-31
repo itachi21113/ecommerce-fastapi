@@ -44,37 +44,70 @@ class UserService:
 
         return create_access_token(user.id)
 
-    def get_user_by_id(self, user_id: int) -> User:
+  
+
+    def get_user_by_id(self, user_id: int, current_user: User) -> User:
+        if current_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                 detail="You are not allowed to access this user.",
+        )
+
         user = self.repo.get_by_id(user_id)
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"User with ID {user_id} not found.",
-            )
+        )
+
         return user
 
-    def update_user(self, user_id: int, payload: UserUpdate) -> User:
-        user = self.get_user_by_id(user_id)
+    def update_user(
+        self,
+        user_id: int,
+        payload: UserUpdate,
+        current_user: User,
+    ) -> User:
+        if current_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to update this user.",
+            )
+
+        user = self.get_user_by_id(user_id, current_user)
 
         if payload.name is not None:
             user.name = payload.name
 
         return self.repo.save(user)
-
+    
     def change_password(
-        self, user_id: int, payload: PasswordChange
+        self,
+        user_id: int,
+        payload: PasswordChange,
+        current_user: User,
     ) -> dict[str, str]:
-        user = self.get_user_by_id(user_id)
 
-        # 1. Check old password
-        if not verify_password(payload.old_password, user.hashed_password):
+        if current_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to change this user's password.",
+            )
+
+        user = self.get_user_by_id(user_id, current_user)
+
+        if not verify_password(
+            payload.old_password,
+            user.hashed_password,
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Current password does not match.",
             )
 
-        # 2. Hash and save new password
         user.hashed_password = hash_password(payload.new_password)
+
         self.repo.save(user)
 
         return {"message": "Password updated successfully."}
