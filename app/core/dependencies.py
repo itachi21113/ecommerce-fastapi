@@ -51,3 +51,13 @@ def get_current_user(
         )
 
     return user
+
+def require_user_access(
+    current_user: User,
+    user_id: int,
+) -> None:
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to access this user.",
+        )

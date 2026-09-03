@@ -14,14 +14,23 @@ from app.user.schema import (
     UserUpdate,
     TokenResponse,
 )
+from app.auth.repository import RefreshTokenRepository
+from app.auth.service import RefreshTokenService
 from app.user.service import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
-    repo = UserRepository(db)
-    return UserService(repo)
+    user_repo = UserRepository(db)
+
+    refresh_token_repo = RefreshTokenRepository(db)
+    refresh_token_service = RefreshTokenService(refresh_token_repo)
+
+    return UserService(
+        user_repo,
+        refresh_token_service,
+    )
 
 
 @router.post(
@@ -47,10 +56,11 @@ def login_user(
     payload: UserLogin,
     service: UserService = Depends(get_user_service),
 ) -> TokenResponse:
-    access_token = service.login_user(payload)
+    access_token, refresh_token = service.login_user(payload)
 
     return TokenResponse(
         access_token=access_token,
+        refresh_token=refresh_token,
         token_type="bearer",
     )
 

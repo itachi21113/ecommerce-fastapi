@@ -1,15 +1,26 @@
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 
+from app.core.dependencies import require_user_access
 from app.core.security import hash_password, verify_password , create_access_token
 from app.user.model import User
 from app.user.repository import UserRepository
 from app.user.schema import PasswordChange, UserCreate, UserLogin, UserUpdate
-
+from app.auth.repository import RefreshTokenRepository
+from app.auth.service import RefreshTokenService
 
 class UserService:
 
-    def __init__(self, repo: UserRepository) -> None:
+    def __init__(
+        self,
+        repo: UserRepository,
+        refresh_token_service: RefreshTokenService,
+        db: Session
+    ) -> None:
         self.repo = repo
+        self.refresh_token_service = refresh_token_service
+        self.db = db
+
 
     def register_user(self, payload: UserCreate) -> User:
         existing_user = self.repo.get_by_email(email=payload.email)
@@ -27,31 +38,45 @@ class UserService:
         )
         return self.repo.create(new_user)
 
-    def login_user(self, payload: UserLogin) -> str:
+    def login_user(self, payload: UserLogin) -> tuple[str, str]:
         user = self.repo.get_by_email(email=payload.email)
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password.",
             )
 
-        is_valid = verify_password(payload.password, user.hashed_password)
+        is_valid = verify_password(
+            payload.password,
+            user.hashed_password,
+        )
+
         if not is_valid:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password.",
             )
 
-        return create_access_token(user.id)
+        try:
+            access_token = create_access_token(user)
 
+            refresh_token = self.refresh_token_service.create_refresh_token(user)
+
+            self.db.commit()
+
+            return access_token, refresh_token
+
+        except Exception :
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to login user.",
+            )
   
 
     def get_user_by_id(self, user_id: int, current_user: User) -> User:
-        if current_user.id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                 detail="You are not allowed to access this user.",
-        )
+        require_user_access(current_user , user_id)
 
         user = self.repo.get_by_id(user_id)
 
@@ -69,11 +94,8 @@ class UserService:
         payload: UserUpdate,
         current_user: User,
     ) -> User:
-        if current_user.id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to update this user.",
-            )
+        
+        require_user_access(current_user , user_id)
 
         user = self.get_user_by_id(user_id, current_user)
 
@@ -89,11 +111,7 @@ class UserService:
         current_user: User,
     ) -> dict[str, str]:
 
-        if current_user.id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to change this user's password.",
-            )
+        require_user_access(current_user , user_id)
 
         user = self.get_user_by_id(user_id, current_user)
 
