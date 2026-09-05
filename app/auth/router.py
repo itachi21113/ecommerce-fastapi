@@ -17,7 +17,7 @@ def get_refresh_token_service(
     db: Session = Depends(get_db),
 ) -> RefreshTokenService:
     repo = RefreshTokenRepository(db)
-    return RefreshTokenService(repo)
+    return RefreshTokenService(repo , db)
 
 
 @router.post("/refresh", response_model=TokenResponse)

@@ -19,7 +19,7 @@ from fastapi import HTTPException, status
 
 class RefreshTokenService:
 
-    def __init__(self, repo: RefreshTokenRepository , db: Session) -> None:
+    def __init__(self, repo: RefreshTokenRepository  , db: Session) -> None:
         self.repo = repo
         self.db = db
 

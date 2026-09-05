@@ -25,11 +25,12 @@ def get_user_service(db: Session = Depends(get_db)) -> UserService:
     user_repo = UserRepository(db)
 
     refresh_token_repo = RefreshTokenRepository(db)
-    refresh_token_service = RefreshTokenService(refresh_token_repo)
+    refresh_token_service = RefreshTokenService(refresh_token_repo , db)
 
     return UserService(
         user_repo,
         refresh_token_service,
+        db
     )
 
 

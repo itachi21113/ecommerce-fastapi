@@ -19,21 +19,11 @@ class UserRepository:
         return self.db.execute(stmt).scalar_one_or_none()
 
     def create(self, user: User) -> User:
-        try:
-            self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
-            return user
-        except SQLAlchemyError:
-            self.db.rollback()
-            raise
+        self.db.add(user)
+        self.db.flush()
+        return user
 
     def save(self, user: User) -> User:
         """Commit changes on an already attached user instance."""
-        try:
-            self.db.commit()
-            self.db.refresh(user)
-            return user
-        except SQLAlchemyError:
-            self.db.rollback()
-            raise
+        self.db.flush()
+        return user
