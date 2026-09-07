@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
-import secrets , hashlib , jwt 
+import secrets, hashlib, jwt
+from jwt.exceptions import InvalidTokenError
 from app.core.config import settings
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
@@ -49,12 +50,16 @@ def create_access_token(user_id: int) -> str:
         algorithm=settings.jwt_algorithm,
     )
 
-def decode_access_token(token: str) -> dict:
-    return jwt.decode(
-        token,
-        settings.jwt_secret_key,
-        algorithms=[settings.jwt_algorithm],
-    )
+def decode_access_token(token: str):
+    try:
+        payload = jwt.decode(
+            token, 
+            settings.jwt_secret_key,
+            algorithms=[settings.jwt_algorithm],
+        )
+        return payload
+    except InvalidTokenError:
+        return None
 
 def create_refresh_token() -> str:
     return secrets.token_urlsafe(64)

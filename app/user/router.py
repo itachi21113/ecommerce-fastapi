@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.user.model import User
-from app.core.dependencies import get_current_user
+from app.core.dependencies import RoleChecker, get_current_user
 from app.db.database import get_db
 from app.user.repository import UserRepository
+from app.user.roles import UserRole
 from app.user.schema import (
     MessageResponse,
     PasswordChange,
@@ -19,7 +20,7 @@ from app.auth.service import RefreshTokenService
 from app.user.service import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])
-
+require_admin = RoleChecker([UserRole.ADMIN])
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     user_repo = UserRepository(db)
@@ -104,7 +105,8 @@ def update_user(
 def change_password(
     user_id: int,
     payload: PasswordChange,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     service: UserService = Depends(get_user_service),
 ) -> dict[str, str]:
     return service.change_password(user_id, payload ,current_user)
+
