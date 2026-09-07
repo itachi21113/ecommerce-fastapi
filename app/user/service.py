@@ -70,7 +70,7 @@ class UserService:
             )
 
         try:
-            access_token = create_access_token(user)
+            access_token = create_access_token(user.id)
 
             refresh_token = self.refresh_token_service.create_refresh_token(user)
 
@@ -122,9 +122,8 @@ class UserService:
         current_user: User,
     ) -> dict[str, str]:
 
-        require_user_access(current_user , user_id)
 
-        user = self.get_user_by_id(user_id, current_user)
+        user = self.repo.get_by_id(user_id)
 
         if not verify_password(
             payload.old_password,
@@ -138,5 +137,21 @@ class UserService:
         user.hashed_password = hash_password(payload.new_password)
 
         self.repo.save(user)
+        self.db.commit()
 
         return {"message": "Password updated successfully."}
+
+    def delete_user_service(self, user_id: int, current_user: User) -> dict[str, str]:
+        
+
+        user = self.repo.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} not found.",
+            )
+
+        self.repo.delete(user)
+        self.db.commit()
+
+        return {"message": "User deleted successfully."}

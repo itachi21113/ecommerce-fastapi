@@ -33,8 +33,14 @@ def get_current_user(
         raise credentials_exception
 
     # 2. Extract user identifier (assuming 'sub' holds the user ID or email)
-    user_id: str = payload.get("sub")
-    if user_id is None:
+    user_id_str: str = payload.get("sub")
+    if user_id_str is None:
+        raise credentials_exception
+
+    #So user_id in jwt paylode is a string but in database it is an integer so we need to convert it to integer
+    try:
+        user_id = int(user_id_str)
+    except ValueError:
         raise credentials_exception
 
     
@@ -68,6 +74,6 @@ class RoleChecker:
         if user.role not in [role.value for role in self.allowed_roles]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to perform this action"
+                detail="You do not have permission to perform this action error from dependencies.py",
             )
         return user

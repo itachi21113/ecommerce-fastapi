@@ -110,3 +110,15 @@ def change_password(
 ) -> dict[str, str]:
     return service.change_password(user_id, payload ,current_user)
 
+@router.delete(
+    "/{user_id}",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Delete user",
+)
+def delete_user(
+    user_id: int,
+    current_user: User = Depends(require_admin),
+    service: UserService = Depends(get_user_service),
+) -> dict[str, str]:
+    return service.delete_user_service(user_id, current_user)

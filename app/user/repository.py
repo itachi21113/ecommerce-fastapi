@@ -27,3 +27,7 @@ class UserRepository:
         """Commit changes on an already attached user instance."""
         self.db.flush()
         return user
+
+    def delete(self, user: User) -> None:
+        self.db.delete(user)
+        self.db.flush()
