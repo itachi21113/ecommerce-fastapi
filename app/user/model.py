@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from app.user.roles import UserRole
 from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,6 +16,13 @@ class User(Base):
     )
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
+    role: Mapped[UserRole] = mapped_column(
+            String(50),
+            nullable=False,
+            default=UserRole.USER.value,
+        )
+
+    
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -26,6 +33,8 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    
 
 
 class RefreshToken(Base):

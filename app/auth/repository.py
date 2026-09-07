@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from app.user.model import RefreshToken
@@ -29,3 +29,17 @@ class RefreshTokenRepository:
 
         self.db.flush()
         return refresh_token
+
+    def revoke_all_tokens_for_user(self, user_id: int) -> None:
+        stmt = (
+            update(RefreshToken)
+            .where(
+                RefreshToken.user_id == user_id,
+                RefreshToken.revoked_at.is_(None)
+                )
+            .values(
+                revoked_at=datetime.now(timezone.utc)
+                )  
+        )
+        self.db.execute(stmt)
+        self.db.flush()

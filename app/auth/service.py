@@ -50,6 +50,9 @@ class RefreshTokenService:
             )
 
         if refresh_token.revoked_at is not None:
+            self.repo.revoke_all_tokens_for_user(refresh_token.user_id)
+            self.db.commit()
+
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Refresh token has been revoked.",

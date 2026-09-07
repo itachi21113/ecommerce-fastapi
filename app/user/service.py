@@ -8,6 +8,7 @@ from app.user.repository import UserRepository
 from app.user.schema import PasswordChange, UserCreate, UserLogin, UserUpdate
 from app.auth.repository import RefreshTokenRepository
 from app.auth.service import RefreshTokenService
+from app.user.roles import UserRole
 
 class UserService:
 
@@ -35,8 +36,18 @@ class UserService:
             name=payload.name,
             email=payload.email,
             hashed_password=hashed_pwd,
+            role=UserRole.USER
         )
-        return self.repo.create(new_user)
+        try:
+            self.repo.create(new_user)
+            self.db.commit()
+            return new_user
+        except Exception:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to register user.",
+            )
 
     def login_user(self, payload: UserLogin) -> tuple[str, str]:
         user = self.repo.get_by_email(email=payload.email)
