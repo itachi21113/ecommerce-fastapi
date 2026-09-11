@@ -1,18 +1,17 @@
-FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
+
+FROM python:3.14-slim
 
 WORKDIR /app
 
-# Install runtime dependencies from the locked dependency graph first.
 COPY pyproject.toml uv.lock ./
-RUN uv sync --locked --no-dev
 
-# Copy the application and database migration code.
+RUN pip install uv
+
+RUN uv sync --frozen --no-dev
+
 COPY app ./app
 COPY alembic ./alembic
-COPY alembic.ini ./alembic.ini
+COPY alembic.ini ./
 
-ENV PATH="/app/.venv/bin:$PATH"
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
-EXPOSE 8000
-
-CMD ["fastapi", "run", "app/main.py", "--host", "0.0.0.0", "--port", "8000"]
